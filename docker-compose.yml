@@ -1,0 +1,41 @@
+services:
+  fastapi-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    container_name: fastapi-container
+    ports:
+      - "5000:5000" # Map FastAPI app's port to host
+    depends_on:
+      - mysql-db # Ensure MySQL starts before FastAPI
+    environment:
+      DATABASE_URL: "mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DB}"
+    volumes:
+      - ./app:/app # Map project directory to container
+      - logs:/app/logs # Persist logs if needed
+
+  mysql-db:
+    image: mysql:8.0 # Use MySQL 8.0 image
+    container_name: mysql-container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306" # Map MySQL port to host
+    volumes:
+      - mysql_data:/var/lib/mysql # Persist MySQL data
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  mysql_data: # Volume for MySQL data persistence
+  logs: # Volume for application logs
+
